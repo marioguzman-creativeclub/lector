@@ -1,0 +1,5 @@
+import {build} from 'esbuild';
+import fs from 'node:fs';
+await build({entryPoints:['src/app.js'],bundle:true,minify:true,format:'iife',outfile:'app.js',target:['safari16.4'],legalComments:'eof'});
+const assets=['./','./index.html','./style.css','./app.js','./manifest.webmanifest',...fs.readdirSync('assets',{recursive:true}).filter(p=>fs.statSync(`assets/${p}`).isFile()).map(p=>'./assets/'+p)];
+fs.writeFileSync('sw.js',`const CACHE='lector-v0.1.0';const ASSETS=${JSON.stringify(assets)};self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('lector-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==self.location.origin)return;e.respondWith(caches.match(e.request).then(c=>c||fetch(e.request)));});`);
